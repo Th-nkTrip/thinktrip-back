@@ -1,0 +1,14 @@
+spring:
+  profiles:
+    active: dev   # 로컬 개발 시엔 dev, 배포 시엔 prod
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
