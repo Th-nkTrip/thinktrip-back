@@ -87,10 +87,10 @@ docker run -d -p 8080:8080 \
 - 
 
 ---
+## 🙌 참여자
+- GitHub: 김현우(github링크)
 
 ## 🙌 작성자 
 
-- GitHub: [ranpia](https://github.com/ranpia)
+- GitHub: [김정현](https://github.com/ranpia)
 - Repository: [Th-nkTrip/thinktrip-back](https://github.com/Th-nkTrip/thinktrip-back)
-## 🙌 참여자
-- GitHub: 김현우(github링크)
