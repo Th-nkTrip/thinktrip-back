@@ -1,6 +1,6 @@
 # 🌍 ThinkTrip 백엔드
 
-AI 기반 여행 일정 추천 서비스 **ThinkTrip**의 Spring Boot 백엔드 프로젝트입니다.
+AI 기반 여행 일정 추천 서비스 **ThinkTrip**의 Spring Boot 백엔드 프로젝트입니다. 
 
 ---
 
