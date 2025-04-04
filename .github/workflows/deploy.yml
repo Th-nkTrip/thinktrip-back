@@ -1,0 +1,48 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Grant execute permission for Gradle
+      run: chmod +x ./gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew clean build
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_USER }}/thinktrip-app:latest .
+
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+
+    - name: Push Docker image to Docker Hub
+      run: docker push ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
+
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_IP }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
+          docker rm -f thinktrip-app || true
+          docker run -d -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            --name thinktrip-app \
+            ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
