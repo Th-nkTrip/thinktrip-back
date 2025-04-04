@@ -17,6 +17,7 @@ AI 기반 여행 일정 추천 서비스 **ThinkTrip**의 Spring Boot 백엔드 
 
 ## 📁 프로젝트 구조
 
+```
 thinktrip-api/
 ├── src/
 │   └── main/
@@ -29,6 +30,8 @@ thinktrip-api/
 ├── build.gradle
 ├── Dockerfile
 └── README.md
+```
+
 
 ---
 
