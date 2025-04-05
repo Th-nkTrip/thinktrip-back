@@ -1,5 +1,7 @@
 package com.thinktrip.thinktrip_api.controller;
 
+import com.thinktrip.thinktrip_api.dto.user.UserLoginErrorResponse;
+import com.thinktrip.thinktrip_api.dto.user.UserLoginResponse;
 import com.thinktrip.thinktrip_api.dto.user.UserSignupRequest;
 import com.thinktrip.thinktrip_api.dto.user.UserLoginRequest;
 import com.thinktrip.thinktrip_api.domain.user.User;
@@ -32,23 +34,20 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         Optional<User> userOpt = userRepository.findById(request.getEmail());
 
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
+        if (userOpt.isEmpty() || !passwordEncoder.matches(request.getPassword(), userOpt.get().getPassword())) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new UserLoginErrorResponse("이메일 또는 비밀번호가 일치하지 않습니다."));
         }
 
-        User user = userOpt.get();
+        String token = jwtUtil.generateToken(request.getEmail());
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
-        }
-
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        return ResponseEntity.ok(token); // 토큰 반환
+        return ResponseEntity.ok(new UserLoginResponse(token));
     }
+
 
     // TestController.java
     @RestController
