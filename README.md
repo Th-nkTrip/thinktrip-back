@@ -122,7 +122,7 @@ jobs:
 ---
 
 ## 🙌 참여자
-- GitHub: 김현우(github링크)
+- GitHub: [김현우](https://github.com/KHW01104)
 
 ## 🙌 작성자 
 - GitHub: [김정현](https://github.com/ranpia)
