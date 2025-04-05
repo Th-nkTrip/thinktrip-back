@@ -4,10 +4,12 @@ import com.thinktrip.thinktrip_api.dto.user.UserSignupRequest;
 import com.thinktrip.thinktrip_api.dto.user.UserLoginRequest;
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
+import com.thinktrip.thinktrip_api.jwt.JwtUtil;
 import com.thinktrip.thinktrip_api.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ import java.util.Optional;
 @RequestMapping("/api/users")
 public class UserController {
 
+    private final JwtUtil jwtUtil;
     private final UserService userService;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -42,6 +45,21 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
-        return ResponseEntity.ok("로그인 성공");
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        return ResponseEntity.ok(token); // 토큰 반환
     }
+
+    // TestController.java
+    @RestController
+    @RequestMapping("/api/test")
+    public class TestController {
+
+        @GetMapping("/secure")
+        public ResponseEntity<String> secureEndpoint(Authentication auth) {
+            return ResponseEntity.ok("인증된 사용자: " + auth.getName());
+        }
+    }
+
+
 }
