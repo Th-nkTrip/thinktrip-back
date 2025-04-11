@@ -42,7 +42,9 @@ jobs:
         script: |
           docker pull ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
           docker rm -f thinktrip-app || true
-          docker run -d -p 8080:8080 \
+          docker run -d \
+            -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
+            -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             --name thinktrip-app \
             ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
