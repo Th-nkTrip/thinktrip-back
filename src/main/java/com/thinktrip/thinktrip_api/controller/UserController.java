@@ -6,7 +6,10 @@ import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.jwt.JwtUtil;
 import com.thinktrip.thinktrip_api.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,7 +39,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        Optional<User> userOpt = userRepository.findById(request.getEmail());
+        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (userOpt.isEmpty() || !passwordEncoder.matches(request.getPassword(), userOpt.get().getPassword())) {
             return ResponseEntity
@@ -71,6 +74,34 @@ public class UserController {
         }
     }
 
+    // 본인 프로필 사진 조회 및 바이너리로 보내기
+    @GetMapping("/profile-image")
+    public ResponseEntity<Resource> getProfileImage(@AuthenticationPrincipal String email) throws IOException {
+        ResourceWithType result = userService.getProfileImage(email);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(
+                MediaType.parseMediaType(result.getContentType() != null ? result.getContentType() : "application/octet-stream")
+        );
+
+        return new ResponseEntity<>(result.getResource(), headers, HttpStatus.OK);
+    }
+
+    // 다른 사용자 id 기반 프로필 사진 조회 및 바이너리로 보내기
+    @GetMapping("/profile-image/{id}")
+    public ResponseEntity<Resource> getProfileImageById(@PathVariable Long id) throws IOException {
+        ResourceWithType result = userService.getProfileImageById(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                result.getContentType() != null ? result.getContentType() : "application/octet-stream"
+        ));
+
+        return new ResponseEntity<>(result.getResource(), headers, HttpStatus.OK);
+    }
+
+
+
     // 프로필 사진 삭제
     @DeleteMapping("/profile-image")
     public ResponseEntity<?> deleteProfileImage(@AuthenticationPrincipal String email) {
@@ -82,6 +113,7 @@ public class UserController {
                     .body(Map.of("error", "이미지 삭제 중 오류가 발생했습니다."));
         }
     }
+
 
     // TestController.java
     @RestController

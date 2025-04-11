@@ -1,4 +1,3 @@
-// com.thinktrip.thinktrip_api.dto.user.UserLoginRequest.java
 package com.thinktrip.thinktrip_api.dto.user;
 
 import lombok.Getter;
