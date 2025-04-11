@@ -123,52 +123,38 @@ jobs:
 
 ---
 
-## 📋 TODO
-
-- 로그인 기능 구현 (+카카오 소셜 로그인...?)
-- 마이페이지 기능
-- 프리미엄 구독 확인
-- JWT 리프레시 토큰
-
----
-
 ## ✅ 기능별 정리
 
-### 🔐 사용자 인증 기능
+### 🔐 사용자 인증 및 프로필 관련 API
 
-| 기능       | 설명 |
-|------------|------|
-| 회원가입   | 이메일, 비밀번호, 닉네임, 주소 등 사용자 정보 저장 |
-| 로그인     | 이메일 & 비밀번호 확인 후 JWT 토큰 발급 |
-| 비밀번호 암호화 | BCryptPasswordEncoder 사용 |
-| 토큰 인증 | 요청 시 Authorization 헤더를 통한 사용자 인증 |
-| 보안 필터 | JwtAuthenticationFilter + Spring Security 적용
+| 메서드 | 엔드포인트                         | 설명                                             |
+|--------|------------------------------------|--------------------------------------------------|
+| POST   | `/api/users/signup`                | 회원가입                                         |
+| POST   | `/api/users/login`                 | 로그인 후 JWT 토큰 발급                          |
+| GET    | `/api/users/me`                    | JWT 토큰을 통해 인증된 사용자 정보 조회          |
+| POST   | `/api/users/profile-image`         | 프로필 이미지 업로드 (multipart/form-data)       |
+| GET    | `/api/users/profile-image`         | 본인 프로필 이미지 조회 (Content-Type 포함)      |
+| GET    | `/api/users/profile-image/{id}`    | 다른 사용자 프로필 이미지 조회 (Content-Type 포함) |
+| DELETE | `/api/users/profile-image`         | 프로필 이미지 삭제 → 기본 이미지로 초기화        |
+| GET    | `/api/test/secure`                 | 인증된 사용자 테스트 응답                         |
 
----
-
-### 🖼️ 프로필 이미지 기능
-
-| 메서드 | 엔드포인트                     | 설명                                      |
-|--------|--------------------------------|-------------------------------------------|
-| GET    | `/api/users/me`               | 사용자 전체 정보 조회 (이미지 URL 포함)     |
-| POST   | `/api/users/profile-image`    | 프로필 이미지 업로드 (multipart/form-data) |
-| DELETE | `/api/users/profile-image`    | 프로필 이미지 삭제 → 기본 이미지로 초기화   |
-| GET    | `/image/{email}`              | 업로드된 이미지 조회                       |
-| GET    | `/image/default.jpg`          | 기본 이미지 제공                           |
-
-#### 📁 저장 경로
-
-| 환경 | 경로 |
-|------|------|
-| dev  | `./uploads/` |
-| prod | `/app/uploads/` (EC2 경로 마운트됨)
-
-- `/api/users/me` 응답에 포함된 `profileImageUrl`을 `<img src="...">`로 사용 가능
-- 이미지가 없으면 자동으로 `/image/default.jpg`가 반환됨
+- JWT는 `Authorization: Bearer <token>` 형식으로 전달
+- 비밀번호는 `BCryptPasswordEncoder`로 암호화
+- 인증된 사용자 정보는 `Authentication` 또는 `@AuthenticationPrincipal`을 통해 접근
+- 이미지 응답은 `Resource` 형태로 반환되며, `Content-Type: image/jpeg` 또는 `image/png` 포함됨
 
 ---
 
-### 📌 API 설명
+### 🗂️ 프로필 이미지 저장 경로
+
+| 환경 | 경로                    |
+|------|-------------------------|
+| dev  | `./uploads/`            |
+| prod | `/app/uploads/` (EC2에서 Docker 볼륨 마운트됨) |
+
+---
+
+### 🧾 API 예시
 
 #### 회원가입
 
@@ -230,18 +216,27 @@ Content-Type: application/json
 
 ---
 
-#### 인증 API 호출 예시
+#### 사용자 정보 조회 (`/api/users/me`)
 
-```
-GET /api/test/secure
-Authorization: Bearer {JWT_TOKEN}
-```
-
-✅ 응답:
+✅ 응답 예시:
 
 ```json
 {
-  "message": "인증된 사용자: test@example.com"
+  "email": "test@example.com",
+  "nickname": "길동이",
+  "address": "서울시",
+  "travelStyle": "자연",
+  "profileImageUrl": "/api/users/profile-image"
+}
+```
+
+---
+
+#### 공통 오류 응답 예시
+
+```json
+{
+  "error": "파일 저장 중 오류가 발생했습니다."
 }
 ```
 
@@ -250,16 +245,27 @@ Authorization: Bearer {JWT_TOKEN}
 ### 🔒 보안 구성 요약
 
 - `BCryptPasswordEncoder`로 비밀번호 암호화
-- `JwtAuthenticationFilter`로 토큰 검증
-- `SecurityConfig`에서 엔드포인트 접근 제어
-- 모든 응답은 JSON 형식으로 통일
-- `Authentication` 객체를 통해 로그인 사용자 정보 접근 가능
+- JWT 토큰 발급 및 검증 (`JwtAuthenticationFilter`)
+- 엔드포인트 접근 제어는 `SecurityConfig`에서 관리
+- 모든 응답은 JSON 형식 통일
+- JWT 만료시간 설정: 기본 1시간
+- 인증 실패 시 401 Unauthorized 응답
+- CORS는 `localhost:3000` 등 프론트엔드 도메인 허용 설정 포함
+
+---
+
+### 📌 기타
+
+- Swagger UI를 통해 API 테스트 자동화 예정 (미구현)
+- Refresh Token 기능은 향후 도입 예정
 
 ---
 
 ## 🙌 참여자
+
 - GitHub: [김현우](https://github.com/KHW01104)
 
 ## 🙌 작성자
+
 - GitHub: [김정현](https://github.com/ranpia)
 - Repository: [Th-nkTrip/thinktrip-back](https://github.com/Th-nkTrip/thinktrip-back)
