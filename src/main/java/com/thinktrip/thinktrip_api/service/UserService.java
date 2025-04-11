@@ -1,6 +1,7 @@
 package com.thinktrip.thinktrip_api.service;
 
 import com.thinktrip.thinktrip_api.domain.user.User;
+import com.thinktrip.thinktrip_api.dto.user.UserInfoResponse;
 import com.thinktrip.thinktrip_api.dto.user.UserSignupRequest;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,4 +41,25 @@ public class UserService {
         // 저장
         userRepository.save(user);
     }
+
+    public UserInfoResponse getUserInfo(String email) {
+        User user = userRepository.findById(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        return new UserInfoResponse(
+                user.getEmail(),
+                user.getName(),
+                user.getNickname(),
+                user.getAddress(),
+                user.getTravelStyle(),
+                user.getRole(),
+                user.getProvider(),
+                user.isPremium(),
+                user.getGptCallCount(),
+                user.getLastGptCallDate(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
+    }
+
 }
