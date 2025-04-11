@@ -1,9 +1,6 @@
 package com.thinktrip.thinktrip_api.controller;
 
-import com.thinktrip.thinktrip_api.dto.user.UserLoginErrorResponse;
-import com.thinktrip.thinktrip_api.dto.user.UserLoginResponse;
-import com.thinktrip.thinktrip_api.dto.user.UserSignupRequest;
-import com.thinktrip.thinktrip_api.dto.user.UserLoginRequest;
+import com.thinktrip.thinktrip_api.dto.user.*;
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.jwt.JwtUtil;
@@ -47,6 +44,14 @@ public class UserController {
 
         return ResponseEntity.ok(new UserLoginResponse(token));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserInfoResponse> getMyInfo(Authentication auth) {
+        String email = auth.getName(); // JWT에서 추출된 사용자 이메일
+        UserInfoResponse userInfo = userService.getUserInfo(email);
+        return ResponseEntity.ok(userInfo);
+    }
+
 
 
     // TestController.java
