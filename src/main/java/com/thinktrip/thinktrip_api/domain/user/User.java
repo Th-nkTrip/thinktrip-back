@@ -16,7 +16,11 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @Column(length = 100)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(unique = true, nullable = false)
+    private Long id; // 내부 식별자 (게시판, 파일명, URL, FK 등으로 사용)
+
+    @Column(length = 100, unique = true, nullable = false)
     private String email; // 이메일이 PK
 
     @Column(nullable = false)
