@@ -37,7 +37,6 @@ thinktrip-api/
 ├── build.gradle
 ├── Dockerfile
 └── README.md
-
 ```
 
 ---
@@ -69,6 +68,7 @@ spring:
 ```bash
 docker run -d -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
+  -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
   --name thinktrip-app \
   ranpia/thinktrip-app:latest
 ```
@@ -145,6 +145,29 @@ jobs:
 | 보안 필터 | JwtAuthenticationFilter + Spring Security 적용
 
 ---
+
+### 🖼️ 프로필 이미지 기능
+
+| 메서드 | 엔드포인트                     | 설명                                      |
+|--------|--------------------------------|-------------------------------------------|
+| GET    | `/api/users/me`               | 사용자 전체 정보 조회 (이미지 URL 포함)     |
+| POST   | `/api/users/profile-image`    | 프로필 이미지 업로드 (multipart/form-data) |
+| DELETE | `/api/users/profile-image`    | 프로필 이미지 삭제 → 기본 이미지로 초기화   |
+| GET    | `/image/{email}`              | 업로드된 이미지 조회                       |
+| GET    | `/image/default.jpg`          | 기본 이미지 제공                           |
+
+#### 📁 저장 경로
+
+| 환경 | 경로 |
+|------|------|
+| dev  | `./uploads/` |
+| prod | `/app/uploads/` (EC2 경로 마운트됨)
+
+- `/api/users/me` 응답에 포함된 `profileImageUrl`을 `<img src="...">`로 사용 가능
+- 이미지가 없으면 자동으로 `/image/default.jpg`가 반환됨
+
+---
+
 ### 📌 API 설명
 
 #### 회원가입
@@ -152,7 +175,9 @@ jobs:
 ```
 POST /api/users/signup
 Content-Type: application/json
+```
 
+```json
 {
   "email": "test@example.com",
   "password": "1234",
@@ -178,7 +203,9 @@ Content-Type: application/json
 ```
 POST /api/users/login
 Content-Type: application/json
+```
 
+```json
 {
   "email": "test@example.com",
   "password": "1234"
@@ -200,6 +227,7 @@ Content-Type: application/json
   "message": "이메일 또는 비밀번호가 일치하지 않습니다."
 }
 ```
+
 ---
 
 #### 인증 API 호출 예시
@@ -226,6 +254,7 @@ Authorization: Bearer {JWT_TOKEN}
 - `SecurityConfig`에서 엔드포인트 접근 제어
 - 모든 응답은 JSON 형식으로 통일
 - `Authentication` 객체를 통해 로그인 사용자 정보 접근 가능
+
 ---
 
 ## 🙌 참여자
