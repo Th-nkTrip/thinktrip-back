@@ -114,6 +114,32 @@ public class UserController {
         }
     }
 
+    // gpt 사용횟수 증가 및 성공여부 반환
+    @PostMapping("/gpt/usage")
+    public ResponseEntity<?> recordGptUsage(@AuthenticationPrincipal String email) {
+        try {
+            int remaining = userService.useGptOrThrow(email);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "remainingCalls", remaining == -1 ? "무제한" : remaining
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    // gpt 사용 횟수 조회
+    @GetMapping("/gpt/usage")
+    public ResponseEntity<?> getGptUsage(@AuthenticationPrincipal String email) {
+        int remaining = userService.getRemainingGptCalls(email);
+
+        return ResponseEntity.ok(Map.of(
+                "remainingCalls", remaining == -1 ? "무제한" : remaining
+        ));
+    }
+
 
     // TestController.java
     @RestController
