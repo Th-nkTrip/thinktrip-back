@@ -35,6 +35,10 @@ public class UserService {
             throw new RuntimeException("이미 가입된 이메일입니다.");
         }
 
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("비밀번호는 필수 입력 항목입니다.");
+        }
+
         String encryptedPassword = passwordEncoder.encode(request.getPassword());
 
         User user = new User();
@@ -185,5 +189,5 @@ public class UserService {
         return Math.max(0, 5 - user.getGptCallCount());
     }
 
-
 }
+
