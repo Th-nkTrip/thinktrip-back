@@ -242,6 +242,54 @@ Content-Type: application/json
 
 ---
 
+### 🔑 Google 소셜 로그인
+
+- OAuth2.0 기반 구글 로그인 연동
+- 로그인 시 사용자 이메일, 이름, 프로필 이미지 받아옴
+- 기존 회원이 아니면 자동 회원가입 처리
+- 최초 로그인 시 사용자 정보 저장 (provider: "google")
+
+#### ⚙️ 구현 방식
+
+- Spring Security OAuth2 Client 사용
+- 구글 로그인 URL: `/oauth2/authorization/google`
+- 로그인 성공 후 리디렉션 URI: `/login/oauth2/code/google`
+- `application.yml`에 다음 항목 구성:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: {GOOGLE_CLIENT_ID}
+            client-secret: {GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - profile
+              - email
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+```
+
+- 인증 완료 후 JWT 토큰 발급 및 프론트로 전달
+- 일반 회원과 동일하게 `/api/users/me` 호출 가능
+
+#### ✅ 리다이렉션 동작 흐름
+
+1. `/oauth2/authorization/google` → Google 로그인 페이지로 이동
+2. 로그인 성공 시 `/login/oauth2/code/google`으로 리디렉션
+3. OAuth2SuccessHandler에서 JWT 생성 및 응답
+
+---
+
+---
+
 ### 🔒 보안 구성 요약
 
 - `BCryptPasswordEncoder`로 비밀번호 암호화
