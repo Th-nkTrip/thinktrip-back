@@ -23,7 +23,7 @@ public class User {
     @Column(length = 100, unique = true, nullable = false)
     private String email; // 이메일이 PK
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password; // 비밀번호 (소셜 로그인은 null 가능)
 
     @Column(nullable = false)
