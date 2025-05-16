@@ -75,6 +75,13 @@ public class UserService {
         );
     }
 
+    public void deleteByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        userRepository.delete(user);
+    }
+
+
     public String uploadProfileImage(String email, MultipartFile image) throws IOException {
         if (!image.getContentType().startsWith("image/")) {
             throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");

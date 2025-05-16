@@ -59,6 +59,13 @@ public class UserController {
         return ResponseEntity.ok(userInfo);
     }
 
+    @DeleteMapping("/users/me")
+    public ResponseEntity<?> deleteUser(@AuthenticationPrincipal String email) {
+        userService.deleteByEmail(email);
+        return ResponseEntity.ok().body(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+    }
+
+
     // 프로필 사진 업로드
     @PostMapping("/profile-image")
     public ResponseEntity<?> uploadProfileImage(@RequestParam("image") MultipartFile image,
