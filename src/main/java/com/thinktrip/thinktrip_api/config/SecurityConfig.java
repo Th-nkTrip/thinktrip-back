@@ -2,13 +2,11 @@
 package com.thinktrip.thinktrip_api.config;
 
 import com.thinktrip.thinktrip_api.jwt.JwtAuthenticationFilter;
-import com.thinktrip.thinktrip_api.service.CustomOAuth2UserService;
-import com.thinktrip.thinktrip_api.service.OAuth2LoginSuccessHandler;
+import com.thinktrip.thinktrip_api.service.user.CustomOAuth2UserService;
+import com.thinktrip.thinktrip_api.service.user.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;

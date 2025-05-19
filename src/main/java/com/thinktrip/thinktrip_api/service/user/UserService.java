@@ -1,4 +1,4 @@
-package com.thinktrip.thinktrip_api.service;
+package com.thinktrip.thinktrip_api.service.user;
 
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.dto.user.ResourceWithType;
