@@ -33,5 +33,7 @@ spring:
 
 app:
   upload-path: ./uploads  # 📁 로컬 테스트용 이미지 업로드 경로
+  frontend:
+    redirect-url: ${FRONTEND_REDIRECT_URL}
 
 

@@ -42,3 +42,6 @@ spring:
 
 app:
   upload-path: /app/uploads
+
+frontend:
+  redirect-url: ${FRONTEND_REDIRECT_URL}
