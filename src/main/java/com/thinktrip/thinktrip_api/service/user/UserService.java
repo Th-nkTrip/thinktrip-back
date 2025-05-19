@@ -1,4 +1,4 @@
-package com.thinktrip.thinktrip_api.service;
+package com.thinktrip.thinktrip_api.service.user;
 
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.dto.user.ResourceWithType;
@@ -33,6 +33,10 @@ public class UserService {
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
             throw new RuntimeException("이미 가입된 이메일입니다.");
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("비밀번호는 필수 입력 항목입니다.");
         }
 
         String encryptedPassword = passwordEncoder.encode(request.getPassword());
@@ -74,6 +78,13 @@ public class UserService {
                 profileImageUrl
         );
     }
+
+    public void deleteByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        userRepository.delete(user);
+    }
+
 
     public String uploadProfileImage(String email, MultipartFile image) throws IOException {
         if (!image.getContentType().startsWith("image/")) {
@@ -178,5 +189,5 @@ public class UserService {
         return Math.max(0, 5 - user.getGptCallCount());
     }
 
-
 }
+

@@ -4,7 +4,7 @@ import com.thinktrip.thinktrip_api.dto.user.*;
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.jwt.JwtUtil;
-import com.thinktrip.thinktrip_api.service.UserService;
+import com.thinktrip.thinktrip_api.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -58,6 +58,13 @@ public class UserController {
         UserInfoResponse userInfo = userService.getUserInfo(email);
         return ResponseEntity.ok(userInfo);
     }
+
+    @DeleteMapping("/users/me")
+    public ResponseEntity<?> deleteUser(@AuthenticationPrincipal String email) {
+        userService.deleteByEmail(email);
+        return ResponseEntity.ok().body(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+    }
+
 
     // 프로필 사진 업로드
     @PostMapping("/profile-image")
