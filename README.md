@@ -63,16 +63,39 @@ spring:
 - **DB 연결**: AWS RDS MySQL
 - **서버**: EC2 Ubuntu + Docker
 
-### Docker 실행 예시
+---
+
+## 🔐 GitHub Secrets 구성
+
+CI/CD 및 OAuth2 인증을 위해 다음과 같은 GitHub Secrets가 설정되어야 합니다.
+
+| 키 | 설명 |
+|----|------|
+| `EC2_HOST` | EC2 퍼블릭 IP 주소 (ex. `3.39.xxx.xxx`) |
+| `EC2_KEY` | EC2 접속용 PEM 키 (Base64 인코딩된 개인 키) |
+| `DOCKER_USER` | Docker Hub 사용자 이름 |
+| `DOCKER_PASS` | Docker Hub 비밀번호 또는 액세스 토큰 |
+| `KAKAO_CLIENT_ID` | Kakao Developers에서 발급받은 Client ID |
+| `KAKAO_CLIENT_SECRET` | Kakao Developers에서 발급받은 Client Secret |
+| `JWT_SECRET` | JWT 토큰 서명을 위한 비밀 키 |
+| `FRONTEND_REDIRECT_URL` | 소셜 로그인 성공 후 리디렉션할 프론트엔드 주소 (예: `https://thinktrip.kr/oauth2/success`) |
+
+### ✅ 적용 방식
+
+- GitHub Actions 워크플로우 내에서 `application-prod.yml` 혹은 환경 변수에 주입
+- 또는 Docker 실행 시 `-e` 옵션을 통해 전달
 
 ```bash
-docker run -d -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
-  --name thinktrip-app \
-  ranpia/thinktrip-app:latest
+docker pull ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
+          docker rm -f thinktrip-app || true
+          docker run -d \
+            -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
+            -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
+            --name thinktrip-app \
+            ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
 ```
-
 ---
 
 ## 🚀 배포 플로우
@@ -123,25 +146,47 @@ jobs:
 
 ---
 
-## ✅ 기능별 정리
+## 📡 API 엔드포인트 정리
 
-### 🔐 사용자 인증 및 프로필 관련 API
+### 🔐 인증 관련
 
-| 메서드 | 엔드포인트                         | 설명                                             |
-|--------|------------------------------------|--------------------------------------------------|
-| POST   | `/api/users/signup`                | 회원가입                                         |
-| POST   | `/api/users/login`                 | 로그인 후 JWT 토큰 발급                          |
-| GET    | `/api/users/me`                    | JWT 토큰을 통해 인증된 사용자 정보 조회          |
-| POST   | `/api/users/profile-image`         | 프로필 이미지 업로드 (multipart/form-data)       |
-| GET    | `/api/users/profile-image`         | 본인 프로필 이미지 조회 (Content-Type 포함)      |
-| GET    | `/api/users/profile-image/{id}`    | 다른 사용자 프로필 이미지 조회 (Content-Type 포함) |
-| DELETE | `/api/users/profile-image`         | 프로필 이미지 삭제 → 기본 이미지로 초기화        |
-| GET    | `/api/test/secure`                 | 인증된 사용자 테스트 응답                         |
+| 메서드 | 경로                            | 설명                       |
+|--------|---------------------------------|----------------------------|
+| POST   | `/thinktrip/login`              | 사용자 로그인              |
+| POST   | `/thinktrip/signup`             | 사용자 회원가입            |
+| GET    | `/thinktrip/auth/test/secure`   | JWT 인증 테스트 (보호된 API) |
+
+---
+
+### 🙍‍♂️ 사용자 정보
+
+| 메서드 | 경로                         | 설명               |
+|--------|------------------------------|--------------------|
+| GET    | `/thinktrip/usersinfo`       | 사용자 기본 정보 조회 |
+
+---
+
+### 🖼️ 프로필 이미지
+
+| 메서드 | 경로                                   | 설명                        |
+|--------|----------------------------------------|-----------------------------|
+| POST   | `/thinktrip/users/profile-image`       | 프로필 이미지 업로드       |
+| GET    | `/thinktrip/users/profile-image`       | 프로필 이미지 조회         |
+| DELETE | `/thinktrip/users/profile-image`       | 프로필 이미지 삭제 → 기본값으로 |
+
+---
+
+### 💬 GPT 사용 기록
+
+| 메서드 | 경로                                | 설명                          |
+|--------|-------------------------------------|-------------------------------|
+| GET    | `/thinktrip/users/gpt/usage`        | 사용자의 GPT 사용 내역 조회   |
+| POST   | `/thinktrip/users/gpt/usage`        | GPT 사용 요청 기록 저장       |
+
 
 - JWT는 `Authorization: Bearer <token>` 형식으로 전달
 - 비밀번호는 `BCryptPasswordEncoder`로 암호화
 - 인증된 사용자 정보는 `Authentication` 또는 `@AuthenticationPrincipal`을 통해 접근
-- 이미지 응답은 `Resource` 형태로 반환되며, `Content-Type: image/jpeg` 또는 `image/png` 포함됨
 
 ---
 
@@ -153,6 +198,28 @@ jobs:
 | prod | `/app/uploads/` (EC2에서 Docker 볼륨 마운트됨) |
 
 ---
+
+## 🔑 Kakao 소셜 로그인 구성
+
+- OAuth2.0 기반 **카카오 로그인 연동**
+- `Spring Security OAuth2 Client`를 사용하여 구성
+- 로그인 시 카카오로부터 사용자 정보(email, nickname 등) 수신
+- 사용자가 DB에 존재하지 않으면 **자동 회원가입 처리**
+- 로그인 성공 시 **JWT 토큰을 발급**하고 프론트엔드로 리디렉션
+
+### ✅ 리디렉션 흐름
+
+1. 프론트에서 `/oauth2/authorization/kakao` 요청 → 카카오 로그인 페이지로 이동
+2. 로그인 성공 시 `/login/oauth2/code/kakao`로 리디렉션됨
+3. 백엔드의 `OAuth2LoginSuccessHandler`에서 JWT 생성
+4. 설정된 환경변수 `FRONTEND_REDIRECT_URL`로 다음과 같이 리디렉션됨:
+https://{FRONTEND_REDIRECT_URL}?token={JWT}
+
+
+- 이 토큰은 이후 API 요청 시 `Authorization: Bearer <token>` 헤더에 담아 사용
+
+---
+
 
 ### 🧾 API 예시
 
@@ -230,15 +297,6 @@ Content-Type: application/json
 }
 ```
 
----
-
-#### 공통 오류 응답 예시
-
-```json
-{
-  "error": "파일 저장 중 오류가 발생했습니다."
-}
-```
 
 ---
 
@@ -256,7 +314,6 @@ Content-Type: application/json
 
 ### 📌 기타
 
-- Swagger UI를 통해 API 테스트 자동화 예정 (미구현)
 - Refresh Token 기능은 향후 도입 예정
 
 ---
