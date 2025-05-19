@@ -47,5 +47,6 @@ jobs:
             -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
+            -e FRONTEND_REDIRECT_URL=${{ secrets.FRONTEND_REDIRECT_URL }} \
             --name thinktrip-app \
             ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
