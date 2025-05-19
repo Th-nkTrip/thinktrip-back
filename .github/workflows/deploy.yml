@@ -46,5 +46,6 @@ jobs:
             -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
             -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
+            -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
             --name thinktrip-app \
             ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
