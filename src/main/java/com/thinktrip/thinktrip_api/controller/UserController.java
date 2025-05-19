@@ -4,7 +4,7 @@ import com.thinktrip.thinktrip_api.dto.user.*;
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.jwt.JwtUtil;
-import com.thinktrip.thinktrip_api.service.UserService;
+import com.thinktrip.thinktrip_api.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;

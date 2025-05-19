@@ -1,4 +1,4 @@
-package com.thinktrip.thinktrip_api.service;
+package com.thinktrip.thinktrip_api.service.user;
 
 import com.thinktrip.thinktrip_api.jwt.JwtUtil;
 import jakarta.servlet.ServletException;
