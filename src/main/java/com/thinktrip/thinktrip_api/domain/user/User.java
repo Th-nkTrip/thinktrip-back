@@ -21,7 +21,7 @@ public class User {
     private Long id; // 내부 식별자 (게시판, 파일명, URL, FK 등으로 사용)
 
     @Column(length = 100, unique = true, nullable = false)
-    private String email; // 이메일이 PK
+    private String email;
 
     @Column(nullable = true)
     private String password; // 비밀번호 (소셜 로그인은 null 가능)

@@ -3,6 +3,7 @@ package com.thinktrip.thinktrip_api.service.travel;
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlan;
 import com.thinktrip.thinktrip_api.domain.user.User;
 import com.thinktrip.thinktrip_api.dto.travel.TravelPlanRequest;
+import com.thinktrip.thinktrip_api.dto.travel.TravelPlanResponse;
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlanRepository;
 import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -45,6 +46,20 @@ public class TravelPlanService {
         travelPlanRepository.delete(plan);
     }
 
+    public TravelPlanResponse getPlanById(Long id, String email) {
+        TravelPlan plan = getPlanOwnedByUser(id, email);
+        return toResponseDto(plan);
+    }
+
+    public List<TravelPlanResponse> getPlansByUser(String email, boolean isGenerated) {
+        Long userId = userRepository.findIdByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        return travelPlanRepository.findAllByUserIdAndIsGenerated(userId, isGenerated)
+                .stream()
+                .map(this::toResponseDto)
+                .toList();
+    }
+
     private TravelPlan getPlanOwnedByUser(Long planId, String email) {
         TravelPlan plan = travelPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("여행 계획을 찾을 수 없습니다."));
@@ -56,14 +71,15 @@ public class TravelPlanService {
         return plan;
     }
 
-    public TravelPlan getPlanById(Long id, String email) {
-        return getPlanOwnedByUser(id, email); // 기존 메서드 재활용
+    private TravelPlanResponse toResponseDto(TravelPlan plan) {
+        return TravelPlanResponse.builder()
+                .id(plan.getId())
+                .userId(plan.getUser().getId())
+                .date(plan.getDate())
+                .title(plan.getTitle())
+                .content(plan.getContent())
+                .isGenerated(plan.isGenerated())
+                .createdAt(plan.getCreatedAt())
+                .build();
     }
-
-    public List<TravelPlan> getPlansByUser(String email, boolean isGenerated) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-        return travelPlanRepository.findAllByUserAndIsGenerated(user, isGenerated);
-    }
-
 }

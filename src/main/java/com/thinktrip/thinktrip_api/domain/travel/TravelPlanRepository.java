@@ -9,6 +9,6 @@ import java.util.List;
 public interface TravelPlanRepository extends JpaRepository<TravelPlan, Long> {
     //List<TravelPlan> findAllByUser(User user);
 
-    List<TravelPlan> findAllByUserAndIsGenerated(User user, boolean isGenerated);
+    List<TravelPlan> findAllByUserIdAndIsGenerated(Long userId, boolean isGenerated);
 
 }
