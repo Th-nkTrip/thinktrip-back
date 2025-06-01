@@ -9,7 +9,9 @@ import java.time.LocalDate;
 @Setter
 public class TravelPlanRequest {
 
-    private LocalDate date;
+    private LocalDate startDate;  // 여행 시작일
+
+    private LocalDate endDate;    // 여행 종료일
 
     private String title;
 
