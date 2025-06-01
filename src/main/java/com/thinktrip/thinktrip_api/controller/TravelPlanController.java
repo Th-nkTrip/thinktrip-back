@@ -68,4 +68,11 @@ public class TravelPlanController {
         return ResponseEntity.ok(travelPlanService.getPlanById(id, email));
     }
 
+    // 디데이 확인
+    @GetMapping("/dday")
+    public ResponseEntity<?> getDday(@AuthenticationPrincipal String email) {
+        String dday = travelPlanService.getDdayForUser(email);
+        return ResponseEntity.ok(Map.of("dday", dday));
+    }
+
 }
