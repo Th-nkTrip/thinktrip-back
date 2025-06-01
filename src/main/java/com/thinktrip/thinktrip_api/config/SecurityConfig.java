@@ -38,6 +38,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/signup", "/api/users/login", "/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(401);
+                            response.getWriter().write("{\"error\": \"로그인이 필요합니다.\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(403);
+                            response.getWriter().write("{\"error\": \"접근 권한이 없습니다.\"}");
+                        })
+                )
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
@@ -58,7 +70,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // 배포 시 여기에 프론트 주소 추가
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://www.thinktrip.site/")); // 배포 시 여기에 프론트 주소 추가
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // 쿠키, 인증정보 포함 허용
