@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -25,7 +26,8 @@ public class TravelPlanService {
 
         TravelPlan plan = new TravelPlan();
         plan.setUser(user);
-        plan.setDate(request.getDate());
+        plan.setStartDate(request.getStartDate());
+        plan.setEndDate(request.getEndDate());
         plan.setTitle(request.getTitle());
         plan.setContent(request.getContent());
         plan.setGenerated(isGenerated);
@@ -36,7 +38,8 @@ public class TravelPlanService {
     @Transactional
     public void updatePlan(Long planId, TravelPlanRequest request, String email) {
         TravelPlan plan = getPlanOwnedByUser(planId, email);
-        plan.setDate(request.getDate());
+        plan.setStartDate(request.getStartDate());
+        plan.setEndDate(request.getEndDate());
         plan.setTitle(request.getTitle());
         plan.setContent(request.getContent());
     }
@@ -75,11 +78,30 @@ public class TravelPlanService {
         return TravelPlanResponse.builder()
                 .id(plan.getId())
                 .userId(plan.getUser().getId())
-                .date(plan.getDate())
+                .startDate(plan.getStartDate())
+                .endDate(plan.getEndDate())
                 .title(plan.getTitle())
                 .content(plan.getContent())
                 .isGenerated(plan.isGenerated())
                 .createdAt(plan.getCreatedAt())
+                .updatedAt(plan.getUpdatedAt())
                 .build();
     }
+
+    public String getDdayForUser(String email) {
+        Long userId = userRepository.findIdByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        return travelPlanRepository.findFirstByUserIdOrderByStartDateAsc(userId)
+                .map(plan -> {
+                    LocalDate today = LocalDate.now();
+                    LocalDate start = plan.getStartDate();
+                    long days = today.until(start).getDays();
+                    if (days > 0) return "D-" + days;
+                    else if (days == 0) return "D-Day";
+                    else return "D+" + Math.abs(days);
+                })
+                .orElse("계획 없음");
+    }
+
 }

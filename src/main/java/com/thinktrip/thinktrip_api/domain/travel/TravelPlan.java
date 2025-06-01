@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,7 +26,9 @@ public class TravelPlan {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private LocalDate date;
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 
     private String title;
 
@@ -34,10 +38,10 @@ public class TravelPlan {
     @Column(name = "is_generated")
     private boolean isGenerated;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
+    @UpdateTimestamp
+    private LocalDateTime updatedAt; // 수정일
+
 }

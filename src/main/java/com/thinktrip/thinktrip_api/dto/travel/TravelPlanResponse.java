@@ -11,9 +11,11 @@ import java.time.LocalDateTime;
 public class TravelPlanResponse {
     private Long id;
     private Long userId;
-    private LocalDate date;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private String title;
     private String content;
     private boolean isGenerated;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
