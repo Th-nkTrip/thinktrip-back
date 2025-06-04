@@ -34,6 +34,9 @@ spring:
 app:
   upload-path: ./uploads  # 📁 로컬 테스트용 이미지 업로드 경로
   frontend:
-    redirect-url: ${FRONTEND_REDIRECT_URL}
+    redirect-url: ${FRONTEND_REDIRECT_URL=http://localhost:3000/oauth2/success;GOOGLE_CLIENT_ID=177752975530
+      -edc5qtr7602li3snf1gu46ibrl0m00v2.apps.googleusercontent.com;GOOGLE_CLIENT_PW=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;
+        KAKAO_CLIENT_ID=8959f53fa61ecba9395167a6e04feb7a}                                                                                                                                                                                       
+
 
 
