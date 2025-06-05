@@ -7,8 +7,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Builder
 @Getter
+@Builder
 public class DiaryResponse {
     private Long id;
     private LocalDate startDate;
@@ -16,6 +16,7 @@ public class DiaryResponse {
     private String title;
     private String content;
     private Long travelPlanId;
+    private Long userId;
     private List<String> imageUrls;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

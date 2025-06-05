@@ -5,9 +5,10 @@ import com.thinktrip.thinktrip_api.domain.diary.DiaryImage;
 import com.thinktrip.thinktrip_api.domain.diary.DiaryRepository;
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlan;
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlanRepository;
+import com.thinktrip.thinktrip_api.domain.user.User;
+import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.dto.diary.DiaryRequest;
 import com.thinktrip.thinktrip_api.dto.diary.DiaryResponse;
-import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,17 +29,24 @@ public class DiaryService {
     private final UserRepository userRepository;
 
     public void createDiary(Long travelPlanId, DiaryRequest request, String email, List<MultipartFile> images) {
-        TravelPlan plan = getOwnedPlan(travelPlanId, email);
+        User user = getUserByEmail(email);
+
+        TravelPlan plan = null;
+        if (travelPlanId != null) {
+            plan = getOwnedPlan(travelPlanId, email);
+        }
 
         Diary diary = new Diary();
-        diary.setDate(request.getStartDate());
+        diary.setStartDate(request.getStartDate());
+        diary.setEndDate(request.getEndDate());
         diary.setTitle(request.getTitle());
         diary.setContent(request.getContent());
         diary.setTravelPlan(plan);
+        diary.setUser(user);
 
         if (images != null && !images.isEmpty()) {
             for (MultipartFile image : images) {
-                String url = saveImage(image); // 이미지 저장 후 URL 리턴
+                String url = saveImage(image);
                 DiaryImage diaryImage = new DiaryImage();
                 diaryImage.setImageUrl(url);
                 diaryImage.setDiary(diary);
@@ -49,7 +57,6 @@ public class DiaryService {
         diaryRepository.save(diary);
     }
 
-    // 이미지 저장 메서드 예시
     private String saveImage(MultipartFile image) {
         try {
             String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
@@ -62,13 +69,13 @@ public class DiaryService {
         }
     }
 
-
     public void updateDiary(Long diaryId, DiaryRequest request, String email) {
         Diary diary = getOwnedDiary(diaryId, email);
-        diary.setDate(request.getStartDate());
-        diary.setDate(request.getEndDate());
+        diary.setStartDate(request.getStartDate());
+        diary.setEndDate(request.getEndDate());
         diary.setTitle(request.getTitle());
         diary.setContent(request.getContent());
+        diaryRepository.save(diary);
     }
 
     public void deleteDiary(Long diaryId, String email) {
@@ -89,11 +96,17 @@ public class DiaryService {
         return toDto(diary);
     }
 
+    public List<DiaryResponse> getAllDiariesForUser(String email) {
+        User user = getUserByEmail(email);
+        return diaryRepository.findAllByUser(user).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     private Diary getOwnedDiary(Long diaryId, String email) {
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new IllegalArgumentException("다이어리를 찾을 수 없습니다."));
-        String planOwner = diary.getTravelPlan().getUser().getEmail();
-        if (!planOwner.equals(email)) {
+        if (!diary.getUser().getEmail().equals(email)) {
             throw new IllegalArgumentException("접근 권한이 없습니다.");
         }
         return diary;
@@ -108,6 +121,11 @@ public class DiaryService {
         return plan;
     }
 
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+    }
+
     private DiaryResponse toDto(Diary diary) {
         List<String> imageUrls = diary.getImages().stream()
                 .map(DiaryImage::getImageUrl)
@@ -115,11 +133,12 @@ public class DiaryService {
 
         return DiaryResponse.builder()
                 .id(diary.getId())
-                .startDate(diary.getTravelPlan().getStartDate())
-                .endDate(diary.getTravelPlan().getEndDate())
+                .startDate(diary.getStartDate())
+                .endDate(diary.getEndDate())
                 .title(diary.getTitle())
                 .content(diary.getContent())
-                .travelPlanId(diary.getTravelPlan().getId())
+                .travelPlanId(diary.getTravelPlan() != null ? diary.getTravelPlan().getId() : null)
+                .userId(diary.getUser().getId())
                 .imageUrls(imageUrls)
                 .createdAt(diary.getCreatedAt())
                 .updatedAt(diary.getUpdatedAt())
