@@ -12,6 +12,7 @@ import com.thinktrip.thinktrip_api.dto.diary.DiaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class DiaryService {
     @Value("${app.upload-path}") // "/app/uploads"
     private String uploadPath;
 
+    @Transactional
     public void createDiary(Long travelPlanId, DiaryRequest request, String email, List<MultipartFile> images) {
         User user = getUserByEmail(email);
 
@@ -49,7 +51,9 @@ public class DiaryService {
         diary.setUser(user);
 
         if (images != null && !images.isEmpty()) {
+            System.out.println("이미지 개수: " + images.size());
             for (MultipartFile image : images) {
+                System.out.println("업로드 이미지 이름: " + image.getOriginalFilename());
                 String url = saveImage(image);
                 DiaryImage diaryImage = new DiaryImage();
                 diaryImage.setImageUrl(url);
