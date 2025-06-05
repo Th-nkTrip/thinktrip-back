@@ -43,7 +43,7 @@ jobs:
           docker pull ${{ secrets.DOCKER_USER }}/thinktrip-app:latest
           docker rm -f thinktrip-app || true
           docker run -d \
-            -v /home/ubuntu/thinktrip/profile-images:/app/uploads \
+            -v /home/ubuntu/thinktrip/uploads:/app/uploads \
             -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \

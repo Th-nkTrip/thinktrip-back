@@ -10,6 +10,7 @@ import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.dto.diary.DiaryRequest;
 import com.thinktrip.thinktrip_api.dto.diary.DiaryResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +28,9 @@ public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final TravelPlanRepository travelPlanRepository;
     private final UserRepository userRepository;
+
+    @Value("${app.upload-path}") // "/app/uploads"
+    private String uploadPath;
 
     public void createDiary(Long travelPlanId, DiaryRequest request, String email, List<MultipartFile> images) {
         User user = getUserByEmail(email);
@@ -60,7 +64,7 @@ public class DiaryService {
     private String saveImage(MultipartFile image) {
         try {
             String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path savePath = Paths.get("uploads/diary", filename);
+            Path savePath = Paths.get(uploadPath+"/diary", filename);
             Files.createDirectories(savePath.getParent());
             Files.write(savePath, image.getBytes());
             return "/uploads/diary/" + filename;
