@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,19 +18,22 @@ public class DiaryController {
 
     private final DiaryService diaryService;
 
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> create(@PathVariable Long planId,
-                                    @RequestBody DiaryRequest request) {
+                                    @ModelAttribute("request") DiaryRequest request,
+                                    @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         String email = getEmailFromToken();
-        diaryService.createDiary(planId, request, email);
+        diaryService.createDiary(planId, request, email, images);
         return ResponseEntity.ok(Map.of("message", "다이어리 저장 완료"));
     }
 
-    @PutMapping("/{diaryId}")
+    @PutMapping(value = "/{diaryId}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> update(@PathVariable Long planId,
                                     @PathVariable Long diaryId,
-                                    @RequestBody DiaryRequest request) {
-        String email = getEmailFromToken();
+                                    @RequestPart("request") DiaryRequest request,
+                                    @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+
+    String email = getEmailFromToken();
         diaryService.updateDiary(diaryId, request, email);
         return ResponseEntity.ok(Map.of("message", "다이어리 수정 완료"));
     }
