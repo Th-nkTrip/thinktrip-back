@@ -1,6 +1,7 @@
 package com.thinktrip.thinktrip_api.domain.diary;
 
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlan;
+import com.thinktrip.thinktrip_api.domain.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,9 @@ public class Diary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate date;
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 
     private String title;
 
@@ -32,8 +35,12 @@ public class Diary {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "travel_plan_id", nullable = false)
+    @JoinColumn(name = "travel_plan_id")
     private TravelPlan travelPlan;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

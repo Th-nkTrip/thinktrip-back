@@ -40,12 +40,12 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json");
+                            response.setContentType("application/json; charset=UTF-8");
                             response.setStatus(401);
                             response.getWriter().write("{\"error\": \"로그인이 필요합니다.\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setContentType("application/json");
+                            response.setContentType("application/json; charset=UTF-8");
                             response.setStatus(403);
                             response.getWriter().write("{\"error\": \"접근 권한이 없습니다.\"}");
                         })
