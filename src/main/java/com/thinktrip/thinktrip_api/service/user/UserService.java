@@ -95,7 +95,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         String filename = user.getId() + ".jpg";
-        Path savePath = Paths.get(uploadPath, filename);
+        Path savePath = Paths.get(uploadPath+"/profile", filename);
 
         Files.createDirectories(savePath.getParent());
         Files.write(savePath, image.getBytes());
@@ -107,7 +107,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        Path imagePath = Paths.get(uploadPath, user.getId() + ".jpg");
+        Path imagePath = Paths.get(uploadPath+"/profile", user.getId() + ".jpg");
 
         if (Files.exists(imagePath)) {
             Files.delete(imagePath);
@@ -125,10 +125,10 @@ public class UserService {
     }
 
     private ResourceWithType resolveImage(Long id) throws IOException {
-        Path imagePath = Paths.get(uploadPath, id + ".jpg");
+        Path imagePath = Paths.get(uploadPath+"/profile", id + ".jpg");
 
         if (!Files.exists(imagePath)) {
-            imagePath = Paths.get(uploadPath, "default.jpg");
+            imagePath = Paths.get(uploadPath+"/profile", "default.jpg");
         }
 
         Resource resource = new UrlResource(imagePath.toUri());
