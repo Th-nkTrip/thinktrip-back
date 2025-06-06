@@ -25,8 +25,9 @@ public class DiaryController {
     public ResponseEntity<?> createDiary(@RequestPart("request") DiaryRequest request,
                                          @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         String email = getEmailFromToken();
+        System.out.println("images is null? " + (images == null));
         diaryService.createDiary(request.getTravelPlanId(), request, email, images);
-        return ResponseEntity.ok(Map.of("message", "다이어리 저장 완료"));
+        return ResponseEntity.ok(Map.of("message", "다이어리 저장 완료"+ images));
     }
 
     @PutMapping(value = "/{diaryId}", consumes = "multipart/form-data")
