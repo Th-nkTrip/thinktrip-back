@@ -52,6 +52,15 @@ public class DiaryController {
         return ResponseEntity.ok(diaryService.getDiaryById(diaryId, email));
     }
 
+    @PostMapping(value = "/{diaryId}/images", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadDiaryImages(@PathVariable Long diaryId,
+                                               @RequestPart("images") List<MultipartFile> images) {
+        String email = getEmailFromToken(); // JWT에서 사용자 이메일 추출
+        diaryService.uploadImagesToDiary(diaryId, email, images);
+        return ResponseEntity.ok(Map.of("message", "다이어리 이미지 업로드 완료"));
+    }
+
+
     @GetMapping
     public ResponseEntity<List<DiaryResponse>> getUserDiaries() {
         String email = getEmailFromToken();

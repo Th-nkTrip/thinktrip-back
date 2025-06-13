@@ -30,17 +30,13 @@ public class DiaryService {
     private final TravelPlanRepository travelPlanRepository;
     private final UserRepository userRepository;
 
-    @Value("${app.upload-path}") // "/app/uploads"
+    @Value("${app.upload-path}")
     private String uploadPath;
 
     @Transactional
     public void createDiary(Long travelPlanId, DiaryRequest request, String email, List<MultipartFile> images) {
         User user = getUserByEmail(email);
-
-        TravelPlan plan = null;
-        if (travelPlanId != null) {
-            plan = getOwnedPlan(travelPlanId, email);
-        }
+        TravelPlan plan = (travelPlanId != null) ? getOwnedPlan(travelPlanId, email) : null;
 
         Diary diary = new Diary();
         diary.setStartDate(request.getStartDate());
@@ -51,32 +47,18 @@ public class DiaryService {
         diary.setUser(user);
 
         if (images != null && !images.isEmpty()) {
-            System.out.println("이미지 개수: " + images.size());
-            for (MultipartFile image : images) {
-                System.out.println("업로드 이미지 이름: " + image.getOriginalFilename());
-                String url = saveImage(image);
-                DiaryImage diaryImage = new DiaryImage();
-                diaryImage.setImageUrl(url);
-                diaryImage.setDiary(diary);
-                diary.getImages().add(diaryImage);
-            }
+            images.stream()
+                    .map(this::convertToDiaryImage)
+                    .forEach(image -> {
+                        image.setDiary(diary);
+                        diary.getImages().add(image);
+                    });
         }
 
         diaryRepository.save(diary);
     }
 
-    private String saveImage(MultipartFile image) {
-        try {
-            String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path savePath = Paths.get(uploadPath+"/diary", filename);
-            Files.createDirectories(savePath.getParent());
-            Files.write(savePath, image.getBytes());
-            return "/uploads/diary/" + filename;
-        } catch (IOException e) {
-            throw new RuntimeException("이미지 저장 실패", e);
-        }
-    }
-
+    @Transactional
     public void updateDiary(Long diaryId, DiaryRequest request, String email, List<MultipartFile> images) {
         Diary diary = getOwnedDiary(diaryId, email);
 
@@ -85,45 +67,44 @@ public class DiaryService {
         diary.setTitle(request.getTitle());
         diary.setContent(request.getContent());
 
-        for (DiaryImage image : diary.getImages()) {
-            deleteImageFile(image.getImageUrl());
-        }
-        // 기존 이미지 제거
+        // 기존 이미지 삭제
+        diary.getImages().forEach(image -> deleteImageFile(image.getImageUrl()));
         diary.getImages().clear();
 
         if (images != null && !images.isEmpty()) {
-            for (MultipartFile image : images) {
-                String url = saveImage(image);
-                DiaryImage diaryImage = new DiaryImage();
-                diaryImage.setImageUrl(url);
-                diaryImage.setDiary(diary);
-                diary.getImages().add(diaryImage);
-            }
+            images.stream()
+                    .map(this::convertToDiaryImage)
+                    .forEach(image -> {
+                        image.setDiary(diary);
+                        diary.getImages().add(image);
+                    });
         }
 
         diaryRepository.save(diary);
     }
 
+    @Transactional
+    public void uploadImagesToDiary(Long diaryId, String email, List<MultipartFile> images) {
+        Diary diary = getOwnedDiary(diaryId, email);
 
+        if (images != null && !images.isEmpty()) {
+            images.stream()
+                    .map(this::convertToDiaryImage)
+                    .forEach(image -> {
+                        image.setDiary(diary);
+                        diary.getImages().add(image);
+                    });
+
+            diaryRepository.save(diary);
+        }
+    }
+
+    @Transactional
     public void deleteDiary(Long diaryId, String email) {
         Diary diary = getOwnedDiary(diaryId, email);
-        for (DiaryImage image : diary.getImages()) {
-            deleteImageFile(image.getImageUrl());
-        }
+        diary.getImages().forEach(image -> deleteImageFile(image.getImageUrl()));
         diaryRepository.delete(diary);
     }
-
-    private void deleteImageFile(String imageUrl) {
-        try {
-            // imageUrl이 "/uploads/diary/xxx.png" 형태일 때, 로컬 경로로 변환
-            String relativePath = imageUrl.replace("/uploads", "");
-            Path fullPath = Paths.get(uploadPath + relativePath);
-            Files.deleteIfExists(fullPath);
-        } catch (IOException e) {
-            System.err.println("이미지 삭제 실패: " + e.getMessage());
-        }
-    }
-
 
     public List<DiaryResponse> getAllDiaries(Long travelPlanId, String email) {
         TravelPlan plan = getOwnedPlan(travelPlanId, email);
@@ -134,16 +115,18 @@ public class DiaryService {
     }
 
     public DiaryResponse getDiaryById(Long diaryId, String email) {
-        Diary diary = getOwnedDiary(diaryId, email);
-        return toDto(diary);
+        return toDto(getOwnedDiary(diaryId, email));
     }
 
     public List<DiaryResponse> getAllDiariesForUser(String email) {
         User user = getUserByEmail(email);
-        return diaryRepository.findAllByUser(user).stream()
+        return diaryRepository.findAllByUser(user)
+                .stream()
                 .map(this::toDto)
                 .toList();
     }
+
+    // ===== 내부 메서드 =====
 
     private Diary getOwnedDiary(Long diaryId, String email) {
         Diary diary = diaryRepository.findById(diaryId)
@@ -168,6 +151,35 @@ public class DiaryService {
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
     }
 
+    private String saveImage(MultipartFile image) {
+        try {
+            String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path savePath = Paths.get(uploadPath + "/diary", filename);
+            Files.createDirectories(savePath.getParent());
+            Files.write(savePath, image.getBytes());
+            return "/uploads/diary/" + filename;
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 저장 실패", e);
+        }
+    }
+
+    private void deleteImageFile(String imageUrl) {
+        try {
+            String relativePath = imageUrl.replace("/uploads", "");
+            Path fullPath = Paths.get(uploadPath + relativePath);
+            Files.deleteIfExists(fullPath);
+        } catch (IOException e) {
+            System.err.println("이미지 삭제 실패: " + e.getMessage());
+        }
+    }
+
+    private DiaryImage convertToDiaryImage(MultipartFile image) {
+        String url = saveImage(image);
+        DiaryImage diaryImage = new DiaryImage();
+        diaryImage.setImageUrl(url);
+        return diaryImage;
+    }
+
     private DiaryResponse toDto(Diary diary) {
         List<String> imageUrls = diary.getImages().stream()
                 .map(DiaryImage::getImageUrl)
@@ -187,3 +199,4 @@ public class DiaryService {
                 .build();
     }
 }
+
