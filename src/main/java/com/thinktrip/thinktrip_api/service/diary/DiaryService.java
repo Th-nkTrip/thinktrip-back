@@ -77,19 +77,53 @@ public class DiaryService {
         }
     }
 
-    public void updateDiary(Long diaryId, DiaryRequest request, String email) {
+    public void updateDiary(Long diaryId, DiaryRequest request, String email, List<MultipartFile> images) {
         Diary diary = getOwnedDiary(diaryId, email);
+
         diary.setStartDate(request.getStartDate());
         diary.setEndDate(request.getEndDate());
         diary.setTitle(request.getTitle());
         diary.setContent(request.getContent());
+
+        for (DiaryImage image : diary.getImages()) {
+            deleteImageFile(image.getImageUrl());
+        }
+        // 기존 이미지 제거
+        diary.getImages().clear();
+
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile image : images) {
+                String url = saveImage(image);
+                DiaryImage diaryImage = new DiaryImage();
+                diaryImage.setImageUrl(url);
+                diaryImage.setDiary(diary);
+                diary.getImages().add(diaryImage);
+            }
+        }
+
         diaryRepository.save(diary);
     }
 
+
     public void deleteDiary(Long diaryId, String email) {
         Diary diary = getOwnedDiary(diaryId, email);
+        for (DiaryImage image : diary.getImages()) {
+            deleteImageFile(image.getImageUrl());
+        }
         diaryRepository.delete(diary);
     }
+
+    private void deleteImageFile(String imageUrl) {
+        try {
+            // imageUrl이 "/uploads/diary/xxx.png" 형태일 때, 로컬 경로로 변환
+            String relativePath = imageUrl.replace("/uploads", "");
+            Path fullPath = Paths.get(uploadPath + relativePath);
+            Files.deleteIfExists(fullPath);
+        } catch (IOException e) {
+            System.err.println("이미지 삭제 실패: " + e.getMessage());
+        }
+    }
+
 
     public List<DiaryResponse> getAllDiaries(Long travelPlanId, String email) {
         TravelPlan plan = getOwnedPlan(travelPlanId, email);

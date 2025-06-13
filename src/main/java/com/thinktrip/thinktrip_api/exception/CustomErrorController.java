@@ -34,14 +34,13 @@ public class CustomErrorController implements ErrorController {
         int status = (int) attributes.getOrDefault("status", 500);
         String path = (String) attributes.getOrDefault("path", request.getRequestURI());
 
-        if (status == 404) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of(
-                            "error", "요청하신 API 엔드포인트가 존재하지 않습니다.",
-                            "path", path
-                    ));
-        }
-
-        return ResponseEntity.status(status).body(attributes);
+        return switch (status) {
+            case 404 -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "요청하신 API 엔드포인트가 존재하지 않습니다.", "path", path));
+            case 413 -> ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(Map.of("error", "업로드한 파일의 크기가 너무 큽니다.", "path", path));
+            default -> ResponseEntity.status(status).body(attributes);
+        };
     }
+
 }

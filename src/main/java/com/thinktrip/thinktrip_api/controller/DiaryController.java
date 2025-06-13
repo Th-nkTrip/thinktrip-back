@@ -35,7 +35,7 @@ public class DiaryController {
                                          @RequestPart("request") DiaryRequest request,
                                          @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         String email = getEmailFromToken();
-        diaryService.updateDiary(diaryId, request, email);
+        diaryService.updateDiary(diaryId, request, email, images);
         return ResponseEntity.ok(Map.of("message", "다이어리 수정 완료"));
     }
 

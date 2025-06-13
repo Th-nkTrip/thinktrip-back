@@ -65,6 +65,13 @@ public class UserController {
         return ResponseEntity.ok().body(Map.of("message", "회원 탈퇴가 완료되었습니다."));
     }
 
+    @PatchMapping("/me")
+    public ResponseEntity<?> updateUser(@AuthenticationPrincipal String currentEmail,
+                                        @RequestBody UserSignupRequest request) {
+        userService.updateUserInfo(currentEmail, request);
+        return ResponseEntity.ok(Map.of("message", "회원 정보가 수정되었습니다."));
+    }
+
 
     // 프로필 사진 업로드
     @PostMapping("/profile-image")
@@ -148,16 +155,6 @@ public class UserController {
     }
 
 
-    // TestController.java
-    @RestController
-    @RequestMapping("/api/test")
-    public class TestController {
-
-        @GetMapping("/secure")
-        public ResponseEntity<String> secureEndpoint(Authentication auth) {
-            return ResponseEntity.ok("인증된 사용자: " + auth.getName());
-        }
-    }
 
 
 }

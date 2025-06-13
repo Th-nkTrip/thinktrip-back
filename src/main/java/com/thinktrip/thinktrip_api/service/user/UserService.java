@@ -189,5 +189,31 @@ public class UserService {
         return Math.max(0, 5 - user.getGptCallCount());
     }
 
+    public void updateUserInfo(String currentEmail, UserSignupRequest request) {
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        // 이메일 변경 허용
+        if (request.getEmail() != null && !request.getEmail().equals(currentEmail)) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        user.setName(request.getName());
+
+        if (request.getNickname() != null) user.setNickname(request.getNickname());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
+        if (request.getTravelStyle() != null) user.setTravelStyle(request.getTravelStyle());
+
+        if (user.getProvider() == null && request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        userRepository.save(user);
+    }
+
+
 }
 
