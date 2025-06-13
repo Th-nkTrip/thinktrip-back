@@ -1,11 +1,11 @@
 package com.thinktrip.thinktrip_api.service.travel;
 
 import com.thinktrip.thinktrip_api.domain.travel.TravelPlan;
+import com.thinktrip.thinktrip_api.domain.travel.TravelPlanRepository;
 import com.thinktrip.thinktrip_api.domain.user.User;
+import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import com.thinktrip.thinktrip_api.dto.travel.TravelPlanRequest;
 import com.thinktrip.thinktrip_api.dto.travel.TravelPlanResponse;
-import com.thinktrip.thinktrip_api.domain.travel.TravelPlanRepository;
-import com.thinktrip.thinktrip_api.domain.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +21,7 @@ public class TravelPlanService {
     private final UserRepository userRepository;
 
     public void savePlan(TravelPlanRequest request, String email, boolean isGenerated) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        User user = getUserByEmail(email);
 
         TravelPlan plan = new TravelPlan();
         plan.setUser(user);
@@ -37,7 +36,7 @@ public class TravelPlanService {
 
     @Transactional
     public void updatePlan(Long planId, TravelPlanRequest request, String email) {
-        TravelPlan plan = getPlanOwnedByUser(planId, email);
+        TravelPlan plan = getOwnedPlan(planId, email);
         plan.setStartDate(request.getStartDate());
         plan.setEndDate(request.getEndDate());
         plan.setTitle(request.getTitle());
@@ -45,36 +44,60 @@ public class TravelPlanService {
     }
 
     public void deletePlan(Long planId, String email) {
-        TravelPlan plan = getPlanOwnedByUser(planId, email);
+        TravelPlan plan = getOwnedPlan(planId, email);
         travelPlanRepository.delete(plan);
     }
 
     public TravelPlanResponse getPlanById(Long id, String email) {
-        TravelPlan plan = getPlanOwnedByUser(id, email);
-        return toResponseDto(plan);
+        return toDto(getOwnedPlan(id, email));
     }
 
     public List<TravelPlanResponse> getPlansByUser(String email, boolean isGenerated) {
         Long userId = userRepository.findIdByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
         return travelPlanRepository.findAllByUserIdAndIsGenerated(userId, isGenerated)
                 .stream()
-                .map(this::toResponseDto)
+                .map(this::toDto)
                 .toList();
     }
 
-    private TravelPlan getPlanOwnedByUser(Long planId, String email) {
+    public String getDdayForUser(String email) {
+        Long userId = userRepository.findIdByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        return travelPlanRepository.findFirstByUserIdOrderByStartDateAsc(userId)
+                .map(plan -> {
+                    LocalDate today = LocalDate.now();
+                    long days = today.until(plan.getStartDate()).getDays();
+                    return (days > 0) ? "D-" + days :
+                            (days == 0) ? "D-Day" :
+                                    "D+" + Math.abs(days);
+                })
+                .orElse("계획 없음");
+    }
+
+    // ==========================
+    // 🔒 내부 유틸 메서드
+    // ==========================
+
+    private TravelPlan getOwnedPlan(Long planId, String email) {
         TravelPlan plan = travelPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("여행 계획을 찾을 수 없습니다."));
 
         if (!plan.getUser().getEmail().equals(email)) {
-            throw new IllegalArgumentException("해당 여행 계획을 수정/삭제할 권한이 없습니다.");
+            throw new IllegalArgumentException("해당 여행 계획에 대한 권한이 없습니다.");
         }
 
         return plan;
     }
 
-    private TravelPlanResponse toResponseDto(TravelPlan plan) {
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+    }
+
+    private TravelPlanResponse toDto(TravelPlan plan) {
         return TravelPlanResponse.builder()
                 .id(plan.getId())
                 .userId(plan.getUser().getId())
@@ -87,21 +110,4 @@ public class TravelPlanService {
                 .updatedAt(plan.getUpdatedAt())
                 .build();
     }
-
-    public String getDdayForUser(String email) {
-        Long userId = userRepository.findIdByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-
-        return travelPlanRepository.findFirstByUserIdOrderByStartDateAsc(userId)
-                .map(plan -> {
-                    LocalDate today = LocalDate.now();
-                    LocalDate start = plan.getStartDate();
-                    long days = today.until(start).getDays();
-                    if (days > 0) return "D-" + days;
-                    else if (days == 0) return "D-Day";
-                    else return "D+" + Math.abs(days);
-                })
-                .orElse("계획 없음");
-    }
-
 }
