@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -22,6 +23,13 @@ public class TravelPlanService {
 
     public void savePlan(TravelPlanRequest request, String email, boolean isGenerated) {
         User user = getUserByEmail(email);
+
+        if (request.getStartDate() == null) {
+            throw new IllegalArgumentException("시작일은 필수입니다.");
+        }
+        if (request.getEndDate() == null) {
+            throw new IllegalArgumentException("마지막일은 필수입니다.");
+        }
 
         TravelPlan plan = new TravelPlan();
         plan.setUser(user);
@@ -69,13 +77,17 @@ public class TravelPlanService {
         return travelPlanRepository.findFirstByUserIdOrderByStartDateAsc(userId)
                 .map(plan -> {
                     LocalDate today = LocalDate.now();
-                    long days = today.until(plan.getStartDate()).getDays();
-                    return (days > 0) ? "D-" + days :
-                            (days == 0) ? "D-Day" :
-                                    "D+" + Math.abs(days);
+                    LocalDate start = plan.getStartDate();
+                    if (start == null) return "시작일 미정";
+
+                    long days = ChronoUnit.DAYS.between(today, start);
+                    if (days > 0) return "D-" + days;
+                    else if (days == 0) return "D-Day";
+                    else return "D+" + Math.abs(days);
                 })
                 .orElse("계획 없음");
     }
+
 
     // ==========================
     // 🔒 내부 유틸 메서드
