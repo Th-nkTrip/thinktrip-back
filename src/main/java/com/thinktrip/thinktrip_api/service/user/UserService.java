@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDate;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +25,11 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    @Value("${app.upload-path}") // 사용자 프로필 업로드 경로
+    @Value("${app.upload-path}")
     private String uploadPath;
 
     public void signup(UserSignupRequest request) {
-        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
-        if (existingUser.isPresent()) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("이미 가입된 이메일입니다.");
         }
 
@@ -55,10 +53,9 @@ public class UserService {
     }
 
     public UserInfoResponse getUserInfo(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        User user = getUserByEmail(email);
 
-        Path imagePath = Paths.get(uploadPath+"/profile", user.getId() + ".jpg");
+        Path imagePath = getProfileImagePath(user.getId());
         boolean hasCustomImage = Files.exists(imagePath);
         String profileImageUrl = "/api/users/profile-image/" + (hasCustomImage ? user.getId() : "default.jpg");
 
@@ -80,22 +77,18 @@ public class UserService {
     }
 
     public void deleteByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        User user = getUserByEmail(email);
         userRepository.delete(user);
     }
 
-
     public String uploadProfileImage(String email, MultipartFile image) throws IOException {
-        if (!image.getContentType().startsWith("image/")) {
+        if (image.getContentType() == null || !image.getContentType().startsWith("image/")) {
             throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
         }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        String filename = user.getId() + ".jpg";
-        Path savePath = Paths.get(uploadPath+"/profile", filename);
+        User user = getUserByEmail(email);
+        Path savePath = getProfileImagePath(user.getId());
 
         Files.createDirectories(savePath.getParent());
         Files.write(savePath, image.getBytes());
@@ -104,10 +97,8 @@ public class UserService {
     }
 
     public void deleteProfileImage(String email) throws IOException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        Path imagePath = Paths.get(uploadPath+"/profile", user.getId() + ".jpg");
+        User user = getUserByEmail(email);
+        Path imagePath = getProfileImagePath(user.getId());
 
         if (Files.exists(imagePath)) {
             Files.delete(imagePath);
@@ -115,8 +106,7 @@ public class UserService {
     }
 
     public ResourceWithType getProfileImage(String email) throws IOException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        User user = getUserByEmail(email);
         return resolveImage(user.getId());
     }
 
@@ -125,10 +115,10 @@ public class UserService {
     }
 
     private ResourceWithType resolveImage(Long id) throws IOException {
-        Path imagePath = Paths.get(uploadPath+"/profile", id + ".jpg");
+        Path imagePath = getProfileImagePath(id);
 
         if (!Files.exists(imagePath)) {
-            imagePath = Paths.get(uploadPath+"/profile", "default.jpg");
+            imagePath = Paths.get(uploadPath, "profile", "default.jpg");
         }
 
         Resource resource = new UrlResource(imagePath.toUri());
@@ -137,7 +127,15 @@ public class UserService {
         return new ResourceWithType(resource, contentType);
     }
 
-    // 1. 날짜가 바뀌었으면 호출 수 초기화
+    private Path getProfileImagePath(Long userId) {
+        return Paths.get(uploadPath, "profile", userId + ".jpg");
+    }
+
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
+
     private void resetGptCallIfNewDay(User user) {
         LocalDate today = LocalDate.now();
 
@@ -147,12 +145,10 @@ public class UserService {
         }
     }
 
-    // 2. 오늘 사용 가능한지 확인
     private boolean canUseGpt(User user) {
         return user.isPremium() || user.getGptCallCount() < 5;
     }
 
-    // 3. 호출 수 증가 처리
     private void useGpt(User user) {
         if (!user.isPremium()) {
             user.setGptCallCount(user.getGptCallCount() + 1);
@@ -160,11 +156,9 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // gpt 사용횟수 증가 기능
     @Transactional
     public int useGptOrThrow(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        User user = getUserByEmail(email);
 
         resetGptCallIfNewDay(user);
 
@@ -177,23 +171,17 @@ public class UserService {
         return user.isPremium() ? -1 : Math.max(0, 5 - user.getGptCallCount());
     }
 
-    // gpt 사용횟수 조회
     public int getRemainingGptCalls(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        User user = getUserByEmail(email);
 
         resetGptCallIfNewDay(user);
 
-        if (user.isPremium()) return -1;
-
-        return Math.max(0, 5 - user.getGptCallCount());
+        return user.isPremium() ? -1 : Math.max(0, 5 - user.getGptCallCount());
     }
 
     public void updateUserInfo(String currentEmail, UserSignupRequest request) {
-        User user = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        User user = getUserByEmail(currentEmail);
 
-        // 이메일 변경 허용
         if (request.getEmail() != null && !request.getEmail().equals(currentEmail)) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
@@ -213,7 +201,4 @@ public class UserService {
 
         userRepository.save(user);
     }
-
-
 }
-
