@@ -53,6 +53,9 @@ thinktrip-api/
 ```
 
 ---
+![ChatGPT Image 2025년 6월 13일 오후 04_08_43](https://github.com/user-attachments/assets/b01887b9-4d54-4fe0-b6fd-d5897924b368)
+
+---
 
 ## 🧪 개발 환경 (로컬)
 
