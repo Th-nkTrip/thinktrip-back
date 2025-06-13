@@ -1,5 +1,7 @@
 package com.thinktrip.thinktrip_api.domain.user;
 
+import com.thinktrip.thinktrip_api.domain.travel.TravelPlan;
+import com.thinktrip.thinktrip_api.domain.diary.Diary;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,6 +9,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -53,6 +57,13 @@ public class User {
 
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TravelPlan> travelPlans = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Diary> diaries = new ArrayList<>();
+
+
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -62,4 +73,5 @@ public class User {
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
 }

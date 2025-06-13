@@ -38,5 +38,10 @@ app:
       -edc5qtr7602li3snf1gu46ibrl0m00v2.apps.googleusercontent.com;GOOGLE_CLIENT_PW=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;
         KAKAO_CLIENT_ID=8959f53fa61ecba9395167a6e04feb7a}                                                                                                                                                                                       
 
+server:
+  error:
+    whitelabel:
+      enabled: false
+    include-message: always
 
 

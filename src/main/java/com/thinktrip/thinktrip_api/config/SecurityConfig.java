@@ -4,6 +4,7 @@ package com.thinktrip.thinktrip_api.config;
 import com.thinktrip.thinktrip_api.jwt.JwtAuthenticationFilter;
 import com.thinktrip.thinktrip_api.service.user.CustomOAuth2UserService;
 import com.thinktrip.thinktrip_api.service.user.OAuth2LoginSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,21 +36,29 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/oauth2/**", "/uploads/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers(
+                                "/api/users/signup", "/api/users/login",
+                                "/oauth2/**", "/uploads/**",
+                                "/error"  // 404 처리를 위해 예외로 둠
+                        ).permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
+
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json; charset=UTF-8");
-                            response.setStatus(401);
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write("{\"error\": \"로그인이 필요합니다.\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json; charset=UTF-8");
-                            response.setStatus(403);
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.getWriter().write("{\"error\": \"접근 권한이 없습니다.\"}");
                         })
                 )
+
+
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)

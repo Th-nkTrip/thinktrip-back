@@ -59,7 +59,7 @@ public class UserController {
         return ResponseEntity.ok(userInfo);
     }
 
-    @DeleteMapping("/users/me")
+    @DeleteMapping("/me")
     public ResponseEntity<?> deleteUser(@AuthenticationPrincipal String email) {
         userService.deleteByEmail(email);
         return ResponseEntity.ok().body(Map.of("message", "회원 탈퇴가 완료되었습니다."));
